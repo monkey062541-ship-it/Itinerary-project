@@ -37,7 +37,7 @@
 
 ```bash
 python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt
+.venv/Scripts/pip install -r requirements-dev.txt
 cp .env.example .env   # 填入 LINE 憑證
 .venv/Scripts/python run.py
 ```
@@ -49,6 +49,7 @@ cp .env.example .env   # 填入 LINE 憑證
 | 設定 | 值 |
 |---|---|
 | Build Command | `pip install -r requirements.txt` |
+| Python 版本 | 由 `.python-version` 指定為 3.12.8 |
 | Start Command | `uvicorn app.main:app --host 0.0.0.0 --port $PORT` |
 | 環境變數 | `LINE_CHANNEL_ACCESS_TOKEN`、`LINE_CHANNEL_SECRET` |
 
