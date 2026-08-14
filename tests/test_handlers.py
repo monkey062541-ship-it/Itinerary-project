@@ -4,6 +4,7 @@ import pytest
 
 from app.handlers import (
     GREETING_REPLY,
+    parse_explicit_date,
     HELP_TEXT,
     normalize,
     reply_for,
@@ -121,3 +122,35 @@ def test_week_range_is_monday_to_sunday():
 
 def test_resolve_range_unknown():
     assert resolve_range("隨便打字", ANCHOR) is None
+
+
+# --- 只寫月日時的年份推算（今天固定為 2026-08-14）---
+
+
+@pytest.mark.parametrize(
+    "token, expected",
+    [
+        ("8/15", date(2026, 8, 15)),   # 今年還沒到 → 今年
+        ("8/14", date(2026, 8, 14)),   # 就是今天 → 今年
+        ("3/27", date(2027, 3, 27)),   # 今年已經過了 → 明年
+        ("3月27日", date(2027, 3, 27)),
+        ("8/13", date(2027, 8, 13)),   # 昨天也算已經過了
+    ],
+)
+def test_month_day_rolls_to_next_year_when_past(token, expected):
+    assert parse_explicit_date(token, ANCHOR) == expected
+
+
+@pytest.mark.parametrize(
+    "token, expected",
+    [
+        ("2026-03-27", date(2026, 3, 27)),  # 寫了年份就照寫的算，不推算
+        ("2027-03-27", date(2027, 3, 27)),
+    ],
+)
+def test_explicit_year_is_respected(token, expected):
+    assert parse_explicit_date(token, ANCHOR) == expected
+
+
+def test_impossible_date_returns_none():
+    assert parse_explicit_date("2/30", ANCHOR) is None

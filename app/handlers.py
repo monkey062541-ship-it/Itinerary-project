@@ -50,17 +50,32 @@ def week_range(anchor: date, offset_weeks: int = 0) -> tuple[date, date]:
 
 
 def parse_explicit_date(token: str, anchor: date) -> date | None:
-    """解析 2026-08-20 / 8/20 / 8月20日 三種寫法；沒寫年份就用今年。"""
+    """解析 2027-03-27 / 3/27 / 3月27日 三種寫法。
+
+    只寫月日、沒寫年份時，若該日期在今年已經過去就視為明年。查行程通常是
+    往前看，打「3/27」多半是指下一次的 3/27。要查過去的日期就寫完整年份。
+    """
     for pattern in DATE_PATTERNS:
         matched = pattern.match(token)
         if not matched:
             continue
         groups = matched.groupdict()
-        year = int(groups.get("year") or anchor.year)
-        try:
-            return date(year, int(groups["month"]), int(groups["day"]))
-        except ValueError:  # 例如 2/30 這種不存在的日期
-            return None
+        month, day = int(groups["month"]), int(groups["day"])
+
+        if groups.get("year"):
+            try:
+                return date(int(groups["year"]), month, day)
+            except ValueError:  # 例如 2/30 這種不存在的日期
+                return None
+
+        for year in (anchor.year, anchor.year + 1):
+            try:
+                candidate = date(year, month, day)
+            except ValueError:  # 2/30 在哪一年都不存在
+                return None
+            if candidate >= anchor:
+                return candidate
+        return candidate
     return None
 
 
@@ -99,6 +114,10 @@ def resolve_range(text: str, anchor: date) -> tuple[str, date, date] | None:
     return None
 
 
+# LINE 單則文字訊息上限 5000 字，超過整則會被 API 拒收，留一點餘裕
+MAX_REPLY_LENGTH = 4800
+
+
 def format_events(title: str, events: list[Event]) -> str:
     """把行程排成回覆訊息；跨日的查詢會依日期分段。"""
     if not events:
@@ -115,7 +134,10 @@ def format_events(title: str, events: list[Event]) -> str:
             lines.append(f"\n▍{event.date:%m/%d}（{weekday}）")
         lines.append(event.format_line())
 
-    return "\n".join(lines)
+    reply = "\n".join(lines)
+    if len(reply) > MAX_REPLY_LENGTH:
+        reply = reply[:MAX_REPLY_LENGTH].rstrip() + "\n\n⋯（行程太長，請改查單日或單週）"
+    return reply
 
 
 def reply_for(
