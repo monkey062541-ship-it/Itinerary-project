@@ -92,16 +92,21 @@ def test_explicit_date_formats(token):
     assert "健檢" in ask(token)
 
 
-def test_invalid_date_falls_through():
-    assert "看不懂" in ask("2/30")
+def test_invalid_date_stays_silent():
+    assert ask("2/30") is None
 
 
-def test_unknown_input():
-    answer = ask("幫我訂機票")
-    assert "看不懂" in answer and HELP_TEXT in answer
+@pytest.mark.parametrize(
+    "chatter",
+    ["幫我訂機票", "好啊那就這樣", "晚上要吃什麼", "哈哈哈", "明天記得帶傘", "ok", "👍"],
+)
+def test_unmatched_messages_stay_silent(chatter):
+    """群組裡的一般對話不該被回應。"""
+    assert ask(chatter) is None
 
 
-def test_empty_day_message():
+def test_empty_day_still_replies():
+    """命中關鍵詞但當天沒事，仍要回應，不能靜默。"""
     assert "沒有安排" in ask("8/18")
 
 

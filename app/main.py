@@ -52,8 +52,14 @@ async def callback(request: Request) -> str:
 
 @webhook_handler.add(MessageEvent, message=TextMessageContent)
 def handle_text_message(event: MessageEvent) -> None:
-    """收到文字訊息時回覆。"""
+    """收到文字訊息時回覆；沒命中關鍵詞就什麼都不做。
+
+    群組裡大部分訊息都不是在跟機器人說話，靜靜略過才不會打擾對話。
+    """
     answer = reply_for(event.message.text)
+    if answer is None:
+        return
+
     with ApiClient(line_config) as api_client:
         MessagingApi(api_client).reply_message(
             ReplyMessageRequest(

@@ -2,6 +2,9 @@
 
 刻意不依賴 LINE SDK，維持成純函式：輸入一段文字，輸出要回覆的文字。
 這樣可以直接單元測試，之後換平台或加 AI 也只動這一層。
+
+回傳 None 代表「這則訊息不是在跟我說話，保持安靜」。在群組裡這很重要：
+沒命中關鍵詞就完全不出聲，才不會插嘴別人的對話。
 """
 import re
 from datetime import date, timedelta
@@ -18,6 +21,9 @@ HELP_TEXT = (
     "・8/20（直接輸入日期查那天）\n"
     "・說明"
 )
+
+# 觸發說明的關鍵詞。不含空字串，否則像「的」這種被正規化成空的閒聊也會觸發
+HELP_WORDS = ("說明", "help", "指令", "選單", "功能", "行程")
 
 # 打招呼用語，一律回同一句問候
 GREETINGS = ("哈囉", "哈嘍", "嗨", "安安", "你好", "妳好", "hello", "hi", "hey")
@@ -112,14 +118,19 @@ def format_events(title: str, events: list[Event]) -> str:
     return "\n".join(lines)
 
 
-def reply_for(text: str, anchor: date | None = None, events: list[Event] | None = None) -> str:
-    """依使用者輸入決定回覆內容。anchor 與 events 可注入，方便測試。"""
+def reply_for(
+    text: str, anchor: date | None = None, events: list[Event] | None = None
+) -> str | None:
+    """依使用者輸入決定回覆內容，認不出來就回 None 代表不回應。
+
+    anchor 與 events 可注入，方便測試。
+    """
     message = text.strip()
     anchor = anchor or today()
 
     token = normalize(message)
 
-    if token in ("說明", "help", "Help", "指令", ""):
+    if token.lower() in HELP_WORDS:
         return HELP_TEXT
 
     if token.lower() in GREETINGS:
@@ -127,7 +138,7 @@ def reply_for(text: str, anchor: date | None = None, events: list[Event] | None 
 
     resolved = resolve_range(message, anchor)
     if resolved is None:
-        return f"看不懂「{message}」😅\n\n{HELP_TEXT}"
+        return None  # 不是在跟我說話，保持安靜
 
     title, start, end = resolved
     source = load_events() if events is None else events
