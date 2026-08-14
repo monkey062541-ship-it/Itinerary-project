@@ -5,8 +5,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "")
-CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "")
+# 複製貼上憑證時很容易多帶到空白或換行，會讓簽章驗證失敗，這裡先清掉
+CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET", "").strip()
 PORT = int(os.getenv("PORT", "8000"))
 
 

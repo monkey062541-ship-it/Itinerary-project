@@ -41,7 +41,10 @@ async def callback(request: Request) -> str:
     try:
         webhook_handler.handle(body, signature)
     except InvalidSignatureError:
-        logger.warning("簽章驗證失敗，可能不是來自 LINE 的請求")
+        logger.warning(
+            "簽章驗證失敗：請確認 Render 的 LINE_CHANNEL_SECRET "
+            "與 LINE Console「Basic settings」分頁的 Channel secret 完全一致"
+        )
         raise HTTPException(status_code=400, detail="Invalid signature")
 
     return "OK"
