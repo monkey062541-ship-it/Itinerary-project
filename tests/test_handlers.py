@@ -2,7 +2,14 @@ from datetime import date
 
 import pytest
 
-from app.handlers import HELP_TEXT, normalize, reply_for, resolve_range, week_range
+from app.handlers import (
+    GREETING_REPLY,
+    HELP_TEXT,
+    normalize,
+    reply_for,
+    resolve_range,
+    week_range,
+)
 from app.schedule import Event
 
 # 2026-08-14 是星期五
@@ -24,6 +31,13 @@ def ask(text: str) -> str:
 def test_help():
     assert ask("說明") == HELP_TEXT
     assert ask("help") == HELP_TEXT
+
+
+@pytest.mark.parametrize(
+    "phrasing", ["哈囉", "哈囉！", "哈囉~", " 哈囉 ", "嗨", "安安", "你好", "Hello", "hi"]
+)
+def test_greetings(phrasing):
+    assert ask(phrasing) == GREETING_REPLY
 
 
 def test_today_lists_both_events():

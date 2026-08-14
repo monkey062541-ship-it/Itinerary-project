@@ -19,8 +19,12 @@ HELP_TEXT = (
     "・說明"
 )
 
+# 打招呼用語，一律回同一句問候
+GREETINGS = ("哈囉", "哈嘍", "嗨", "安安", "你好", "妳好", "hello", "hi", "hey")
+GREETING_REPLY = "你今天還好嗎？"
+
 # 使用者常會加上的語助詞，比對前先拿掉，讓「今天行程有哪些？」也能命中
-NOISE_PATTERN = re.compile(r"(行程|安排|計畫|的|我|有|哪些|什麼|甚麼|嗎|呢|請問|查|看|一下|[?？!！。，,\s])")
+NOISE_PATTERN = re.compile(r"(行程|安排|計畫|的|我|有|哪些|什麼|甚麼|嗎|呢|請問|查|看|一下|[?？!！。，,、~～\s])")
 
 DATE_PATTERNS = (
     re.compile(r"^(?P<year>\d{4})-(?P<month>\d{1,2})-(?P<day>\d{1,2})$"),
@@ -113,8 +117,13 @@ def reply_for(text: str, anchor: date | None = None, events: list[Event] | None 
     message = text.strip()
     anchor = anchor or today()
 
-    if normalize(message) in ("說明", "help", "Help", "指令", ""):
+    token = normalize(message)
+
+    if token in ("說明", "help", "Help", "指令", ""):
         return HELP_TEXT
+
+    if token.lower() in GREETINGS:
+        return GREETING_REPLY
 
     resolved = resolve_range(message, anchor)
     if resolved is None:
